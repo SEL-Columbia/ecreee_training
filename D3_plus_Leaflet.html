@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>Sequencing Demo</title>
+<style>
+
+@import url(//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.2/leaflet.css);
+
+#map {
+  width: 960px;
+  height: 500px;
+}
+
+svg {
+  position: relative;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.in_area {
+  fill: #9999DD;
+}
+
+.out_area {
+  fill: #CCCCCC;
+}
+
+
+</style>
+
+<style type="text/css">
+</style>
+</head>
+<body>
+
+<h1>Sequencing Demo</h1>
+
+<p id="map"></p>
+
+<p>This is a demonstration of how a networkplanner output might be sequenced</p>
+
+<p id="graph"></p>
+<p>This graph shows the cumulative population over the sequence</p>
+
+<script src="d3.js"></script>
+<script src="leaflet.js"></script>
+<script type="text/javascript">
+
+// var osmAttr = '&copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>';
+
+// vars for graph
+var margin = {top: 20, right: 20, bottom: 30, left: 80},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var sequence_num = 40;
+
+var igraph, vertices, edges, center, bounds, map;
+
+function convert_to_array(dict) {
+    records = Object.keys(dict).map(function(k) { 
+            record = dict[k]; 
+            record.key = k 
+            return record;
+    }); 
+    return records;
+}
+
+function accumulate_values(vertices, field, output_field) {
+    var result = vertices.concat();
+    var input_vals = vertices.map(function(v) { return v[field]; });
+    for (var i = 0; i < result.length; i++){
+        result[i][output_field] = input_vals.slice(0, i + 1).reduce(function(p, c){ return p + c; });
+    }
+    return result;
+}
+
+function vertices_for_curve(vertices) {
+
+    // convert to array, filter out non grid records and sort by sequence
+    dataset = convert_to_array(vertices);
+    dataset = dataset.filter(function(d) { return d["Sequence..Far.sighted.sequence"] != "NA"; })   
+    dataset.sort(function(a, b) { return a["Sequence..Far.sighted.sequence"] - b["Sequence..Far.sighted.sequence"]; });
+
+    // Now accumulate the population
+    return dataset;
+}
+
+d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
+
+    igraph = collection;
+
+    //Take care of map 1st
+    set_center();
+
+    var map = new L.Map("map", {center: center, zoom: 10}).
+          addLayer(new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'));
+
+    var svg = d3.select(map.getPanes().overlayPane).append("svg"),
+        g = svg.append("g").attr("class", "leaflet-zoom-hide");
+    map.on("viewreset", reset);
+    map.on("moveend", reset);
+    reset();
+
+    //Now take care of graph
+    verts = vertices_for_curve(igraph.vertices);
+    verts = accumulate_values(verts, "Population", "Cumulative_Population");
+
+    verts_in_seq = verts.filter(function(v) { return v["Sequence..Far.sighted.sequence"] <= sequence_num; });
+    verts_out_seq = verts.filter(function(v) { return v["Sequence..Far.sighted.sequence"] >= sequence_num; });
+
+    var x = d3.scale.linear()
+        .range([0, width]);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+
+    var area = d3.svg.area()
+        .x(function(d) { return x(d["Sequence..Far.sighted.sequence"]); })
+        .y0(height)
+        .y1(function(d) { return y(d["Cumulative_Population"]); });
+
+    var graph_svg = d3.select("#graph").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    x.domain(d3.extent(verts, function(d) { return d["Sequence..Far.sighted.sequence"]; }));
+    y.domain([0, d3.max(verts, function(d) { return d["Cumulative_Population"]; })]);
+
+    graph_svg.append("path")
+        .datum(verts_in_seq)
+        .attr("class", "in_area")
+        .attr("d", area);
+
+    graph_svg.append("path")
+        .datum(verts_out_seq)
+        .attr("class", "out_area")
+        .attr("d", area);
+
+    graph_svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+    graph_svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .text("Population");
+
+    //Helper functions for mapping (factor out?)
+    // Use Leaflet to implement a D3 geometric transformation.
+    function projectPoint(x, y) {
+        var point = map.latLngToLayerPoint(new L.LatLng(y, x));
+        mapBounds = map.getBounds();
+        var offset = map.latLngToLayerPoint(mapBounds.getNorthWest());
+        point.x = point.x - offset.x;
+        point.y = point.y - offset.y;
+        return point;
+    }
+
+    function set_center() { 
+        vertices = Object.keys(igraph.vertices).map(function(k) { 
+            vertex = igraph.vertices[k]; 
+            return vertex;
+        }); 
+
+       xvals = vertices.map(function(v) { return v.X; });
+       yvals = vertices.map(function(v) { return v.Y; });
+
+       center = [d3.mean(yvals), d3.mean(xvals)];
+    }
+ 
+    function set_graph() { 
+
+        vertices = Object.keys(igraph.vertices).map(function(k) { 
+            vertex = igraph.vertices[k]; 
+            proj_pt = projectPoint(vertex.X, vertex.Y);
+            igraph.vertices[k].proj_x = proj_pt.x;
+            igraph.vertices[k].proj_y = proj_pt.y;
+            return k;
+        }); 
+
+        edges = Object.keys(igraph.edges).map(function(k) { 
+            edge = igraph.edges[k]; 
+            edge.x1 = igraph.vertices[edge.from].proj_x; 
+            edge.y1 = igraph.vertices[edge.from].proj_y; 
+            edge.x2 = igraph.vertices[edge.to].proj_x; 
+            edge.y2 = igraph.vertices[edge.to].proj_y; 
+            return edge; 
+        }); 
+
+        xvals = vertices.map(function(v) { return igraph.vertices[v].X; });
+        yvals = vertices.map(function(v) { return igraph.vertices[v].Y; });
+
+        proj_xvals = vertices.map(function(v) { return igraph.vertices[v].proj_x; });
+        proj_yvals = vertices.map(function(v) { return igraph.vertices[v].proj_y; });
+
+
+        center = [d3.mean(yvals), d3.mean(xvals)];
+        bounds = [[d3.min(proj_xvals), d3.min(proj_yvals)], [d3.max(proj_xvals), d3.max(proj_yvals)]];
+    }
+
+    function render_graph() {
+
+        // Clear layer
+        d3.select('g').remove();
+
+        // Set size & reverse .map-pane transform
+        var size = map.getSize();
+        mapBounds = map.getBounds();
+        var offset = map.latLngToLayerPoint(mapBounds.getNorthWest());
+
+
+        var g = d3.select('svg')
+                .attr('width', size.x + 'px')
+                .attr('height', size.y + 'px')
+                .attr('style', '-webkit-transform: translate3d(' + offset.x + 'px,' + offset.y + 'px, 0);')
+                .append('g')
+                .attr('class', 'leaflet-zoom-hide')
+
+
+        var lines = g.selectAll("line")
+                         .data(edges)
+                         .enter()
+                         .append("line");
+
+        lines.attr("x1", function(d, i) { return d.x1; }) 
+             .attr("y1", function(d, i) { return d.y1; }) 
+             .attr("x2", function(d, i) { return d.x2; }) 
+             .attr("y2", function(d, i) { return d.y2; }) 
+             .attr("stroke", "red")
+
+
+        var circles = g.selectAll("circle")
+                         .data(vertices)
+                         .enter()
+                         .append("circle");
+
+        circles.attr("cx", function(d, i) { return igraph.vertices[d].proj_x; }) 
+               .attr("cy", function(d, i) { return igraph.vertices[d].proj_y; }) 
+               .attr("r", 5);
+
+    }
+
+
+    // Reposition the SVG to cover the features.
+    function reset() {
+        set_graph();
+        render_graph();
+    }
+
+});
+
+</script>
+</body>
+</html>
