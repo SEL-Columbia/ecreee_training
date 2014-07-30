@@ -26,12 +26,21 @@ svg {
 
 .in_area {
   fill: #9999DD;
+  stroke: #9999DD;
 }
 
 .out_area {
   fill: #CCCCCC;
+  stroke: #CCCCCC;
 }
 
+.slider .handle {
+  fill: #fff;
+  stroke: #000;
+  stroke-opacity: .5;
+  stroke-width: 1.25px;
+  pointer-events: none;
+}
 
 </style>
 
@@ -46,7 +55,9 @@ svg {
 
 <p>This is a demonstration of how a networkplanner output might be sequenced</p>
 
-<p id="graph"></p>
+<p id="slider"></p>
+
+<p id="curve"></p>
 <p>This graph shows the cumulative population over the sequence</p>
 
 <script src="d3.js"></script>
@@ -56,13 +67,19 @@ svg {
 // var osmAttr = '&copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>';
 
 // vars for graph
-var margin = {top: 20, right: 20, bottom: 30, left: 80},
+var margin = {top: 20, right: 20, bottom: 60, left: 80},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
-var sequence_num = 40;
+var margin2 = {top: 430, right: 20, bottom: 10, left: 80},
+    height2 = 500 - margin2.top - margin2.bottom;
 
+var sequence_num = 1;
+
+//TODO:  Wrap these in some simpler structure
 var igraph, vertices, edges, center, bounds, map;
+
+var grid_verts, grid_verts_in_seq, grid_verts_out_seq;
 
 function convert_to_array(dict) {
     records = Object.keys(dict).map(function(k) { 
@@ -100,24 +117,38 @@ d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
     //Take care of map 1st
     set_center();
 
-    var map = new L.Map("map", {center: center, zoom: 10}).
+    var map = new L.Map("map", {center: center, zoom: 11}).
           addLayer(new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'));
 
-    var svg = d3.select(map.getPanes().overlayPane).append("svg"),
-        g = svg.append("g").attr("class", "leaflet-zoom-hide");
+    // Create the svg overlay on the leaflet map
+    d3.select(map.getPanes().overlayPane).append("svg").append("g").attr("class", "leaflet-zoom-hide");
+
     map.on("viewreset", reset);
     map.on("moveend", reset);
     reset();
 
-    //Now take care of graph
-    verts = vertices_for_curve(igraph.vertices);
-    verts = accumulate_values(verts, "Population", "Cumulative_Population");
+    //Now take care of curve
+    //Mostly from:  http://bl.ocks.org/mbostock/3883195
 
-    verts_in_seq = verts.filter(function(v) { return v["Sequence..Far.sighted.sequence"] <= sequence_num; });
-    verts_out_seq = verts.filter(function(v) { return v["Sequence..Far.sighted.sequence"] >= sequence_num; });
+    //set globals
+    grid_verts = vertices_for_curve(igraph.vertices);
+    grid_verts = accumulate_values(grid_verts, "Population", "Cumulative_Population");
+
+    min_seq = d3.min(grid_verts, function(v) { return v["Sequence..Far.sighted.sequence"]; });
+    max_seq = d3.max(grid_verts, function(v) { return v["Sequence..Far.sighted.sequence"]; });
+
+    //Create the svg element
+    //And render the parts that do NOT change when sequence_num changes
+    var curve_svg = d3.select("p#curve").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("class", "curve")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     var x = d3.scale.linear()
-        .range([0, width]);
+        .range([0, width])
+        .clamp(true);
 
     var y = d3.scale.linear()
         .range([height, 0]);
@@ -135,31 +166,15 @@ d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
         .y0(height)
         .y1(function(d) { return y(d["Cumulative_Population"]); });
 
-    var graph_svg = d3.select("#graph").append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    x.domain(d3.extent(grid_verts, function(d) { return d["Sequence..Far.sighted.sequence"]; }));
+    y.domain([0, d3.max(grid_verts, function(d) { return d["Cumulative_Population"]; })]);
 
-    x.domain(d3.extent(verts, function(d) { return d["Sequence..Far.sighted.sequence"]; }));
-    y.domain([0, d3.max(verts, function(d) { return d["Cumulative_Population"]; })]);
-
-    graph_svg.append("path")
-        .datum(verts_in_seq)
-        .attr("class", "in_area")
-        .attr("d", area);
-
-    graph_svg.append("path")
-        .datum(verts_out_seq)
-        .attr("class", "out_area")
-        .attr("d", area);
-
-    graph_svg.append("g")
+    curve_svg.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis);
 
-    graph_svg.append("g")
+    curve_svg.append("g")
         .attr("class", "y axis")
         .call(yAxis)
         .append("text")
@@ -168,6 +183,75 @@ d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
         .attr("dy", ".71em")
         .style("text-anchor", "end")
         .text("Population");
+
+    //add slider to bottom of graph to play with the sequence
+    //slider from:  http://bl.ocks.org/mbostock/6452972
+    var brush = d3.svg.brush()
+        .x(x)
+        .extent([0, 0])
+        .on("brushend", render_new_sequence)
+        .on("brush", brushed);
+
+    var slider_container = curve_svg.append("g")
+        .attr("class", "context")
+        .attr("transform", "translate(0," + margin2.top + ")");
+
+    var slider = slider_container.append("g")
+        .attr("class", "slider")
+        .call(brush);
+
+    slider.selectAll(".extent,.resize")
+        .remove();
+
+    slider.select(".background")
+        .attr("height", height);
+
+    var handle = slider.append("circle")
+        .attr("class", "handle")
+        .attr("r", 9);
+
+    function brushed() {
+        var value = brush.extent()[0];
+
+        if (d3.event.sourceEvent) { // not a programmatic event
+            value = x.invert(d3.mouse(this)[0]);
+            brush.extent([value, value]);
+        }
+
+        /* SET SEQUENCE HERE */
+        sequence_num = Math.floor(value); 
+
+        handle.attr("cx", x(sequence_num));
+
+    }
+
+    render_curve();
+    
+    function render_new_sequence() { 
+        render_curve();
+        render_graph();
+    }
+
+    function render_curve() {
+
+        var curve_svg = d3.select("p#curve").select("svg").select("g.curve");
+
+        grid_verts_in_seq = grid_verts.filter(function(v) { return v["Sequence..Far.sighted.sequence"] <= sequence_num; });
+        grid_verts_out_seq = grid_verts.filter(function(v) { return v["Sequence..Far.sighted.sequence"] >= sequence_num; });
+
+        // clear previously rendered curves
+        curve_svg.selectAll("path").remove();
+
+        curve_svg.append("path")
+            .datum(grid_verts_in_seq)
+            .attr("class", "in_area")
+            .attr("d", area);
+
+        curve_svg.append("path")
+            .datum(grid_verts_out_seq)
+            .attr("class", "out_area")
+            .attr("d", area);
+    }
 
     //Helper functions for mapping (factor out?)
     // Use Leaflet to implement a D3 geometric transformation.
@@ -221,11 +305,20 @@ d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
         center = [d3.mean(yvals), d3.mean(xvals)];
         bounds = [[d3.min(proj_xvals), d3.min(proj_yvals)], [d3.max(proj_xvals), d3.max(proj_yvals)]];
     }
+        
+    function get_class_for_sequence(d, i) {
+        if(d["Sequence..Far.sighted.sequence"] <= sequence_num) {
+            return "in_area";
+        }
+        else {
+            return "out_area";
+        }
+    }
 
     function render_graph() {
 
         // Clear layer
-        d3.select('g').remove();
+        d3.select('p#map').select('svg').select('g').remove();
 
         // Set size & reverse .map-pane transform
         var size = map.getSize();
@@ -233,7 +326,7 @@ d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
         var offset = map.latLngToLayerPoint(mapBounds.getNorthWest());
 
 
-        var g = d3.select('svg')
+        var g = d3.select('p#map').select('svg')
                 .attr('width', size.x + 'px')
                 .attr('height', size.y + 'px')
                 .attr('style', '-webkit-transform: translate3d(' + offset.x + 'px,' + offset.y + 'px, 0);')
@@ -250,8 +343,7 @@ d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
              .attr("y1", function(d, i) { return d.y1; }) 
              .attr("x2", function(d, i) { return d.x2; }) 
              .attr("y2", function(d, i) { return d.y2; }) 
-             .attr("stroke", "red")
-
+             .attr("class", get_class_for_sequence) 
 
         var circles = g.selectAll("circle")
                          .data(vertices)
@@ -260,6 +352,7 @@ d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
 
         circles.attr("cx", function(d, i) { return igraph.vertices[d].proj_x; }) 
                .attr("cy", function(d, i) { return igraph.vertices[d].proj_y; }) 
+               .attr("class", function(d, i) { return get_class_for_sequence(igraph.vertices[d]); })
                .attr("r", 5);
 
     }
