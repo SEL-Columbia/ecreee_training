@@ -110,6 +110,24 @@ function vertices_for_curve(vertices) {
     return dataset;
 }
 
+// misc ui functions
+function get_class_for_sequence(d, i) {
+    if(d["Sequence..Far.sighted.sequence"] <= sequence_num) {
+        return "in_area";
+    }
+    else {
+        return "out_area";
+    }
+}
+
+function get_tooltip_text(d) { 
+    str = "Downstream Demand (kwh): " + d["Sequence..Downstream.demand.sum.kwh"] + "\n";
+    str += "Downstream Distance (m): " + d["Sequence..Downstream.distance.sum.m"] + "\n";
+    str += "Downstream Distance / Demand: " + d["Sequence..Downstream.distance.sum.m.per.downstream.demand.sum.kwh"] + "\n";
+    return str;
+}
+
+
 d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
 
     igraph = collection;
@@ -220,9 +238,7 @@ d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
 
         /* SET SEQUENCE HERE */
         sequence_num = Math.floor(value); 
-
         handle.attr("cx", x(sequence_num));
-
     }
 
     render_curve();
@@ -305,15 +321,6 @@ d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
         center = [d3.mean(yvals), d3.mean(xvals)];
         bounds = [[d3.min(proj_xvals), d3.min(proj_yvals)], [d3.max(proj_xvals), d3.max(proj_yvals)]];
     }
-        
-    function get_class_for_sequence(d, i) {
-        if(d["Sequence..Far.sighted.sequence"] <= sequence_num) {
-            return "in_area";
-        }
-        else {
-            return "out_area";
-        }
-    }
 
     function render_graph() {
 
@@ -349,6 +356,8 @@ d3.json("potou_500kwh_dmd/igraph.json", function(collection) {
                          .data(vertices)
                          .enter()
                          .append("circle");
+        // add tooltip     
+        circles.append("title").text(function(d, i) { return get_tooltip_text(igraph.vertices[d]); });
 
         circles.attr("cx", function(d, i) { return igraph.vertices[d].proj_x; }) 
                .attr("cy", function(d, i) { return igraph.vertices[d].proj_y; }) 
