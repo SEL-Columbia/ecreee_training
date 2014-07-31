@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Sequencing a Scenario via NetworkPlanner R library</title>
+
+
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<p><link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link></p>
+
+<h1>Sequencing a Scenario via NetworkPlanner R library</h1>
+
+<p>In this tutorial, we&#39;ll be taking the output of a NetworkPlanner scenario and sequencing it via the NetworkPlanner R library.  </p>
+
+<h2>About the Library</h2>
+
+<p>The NetworkPlanner R library is an open source utility developed at <a href="sel.columbia.edu">SEL</a> for analyzing NetworkPlanner outputs (and potentially other datasets) in R.<br>
+You can learn more about it <a href="https://github.com/SEL-Columbia/networkplanner.R">here</a></p>
+
+<h2>Installation</h2>
+
+<p><em>You can skip this step if you have already installed the library</em></p>
+
+<p>To install the NetworkPlanner R library, you must install the <a href="http://www.rstudio.com/products/rpackages/devtools/">devtools</a> package from the developers of R studio.
+Once that&#39;s done, you can install our library.</p>
+
+<pre><code class="r">install.packages(&#39;devtools&#39;)
+</code></pre>
+
+<pre><code>## Error: trying to use CRAN without setting a mirror
+</code></pre>
+
+<pre><code class="r">library(devtools)
+install_github(&quot;SEL-Columbia/networkplanner.R&quot;)
+</code></pre>
+
+<h2>Setup</h2>
+
+<p>Now that you have the library installed, you need to locate the directory containing the NetworkPlanner output that you want to work with.<br>
+I&#39;m using my scenario directory below, but yours may vary.  </p>
+
+<pre><code class="r">#Load the library first
+library(networkplanner)
+
+# Set the directory containing the output of a Network Planner
+# scenario.  This will need to change depending on your files location
+base_dir &lt;- &quot;~/src/ecreee_training/leona_500kwh_dmd&quot;
+</code></pre>
+
+<h2>Load</h2>
+
+<p>Load the NetworkPlanner scenario
+&quot;Fake&quot; nodes, which represent connections to an existing network are blue.</p>
+
+<pre><code class="r">np &lt;- read_networkplan(base_dir)
+</code></pre>
+
+<pre><code>## OGR data source with driver: ESRI Shapefile 
+## Source: &quot;/home/cjn/src/ecreee_training/leona_500kwh_dmd&quot;, layer: &quot;networks-proposed&quot;
+## with 70 features and 1 fields
+## Feature type: wkbLineString with 2 dimensions
+</code></pre>
+
+<h2>Plot (Optional)</h2>
+
+<p>This step is optional, but serves as a validation that you have loaded the network properly.  </p>
+
+<p>The plot displays all nodes of the scenario, including those that are not actually
+connected to the network.  </p>
+
+<pre><code class="r">V(np@network)[V(np@network)$Network..Is.fake]$color &lt;- &quot;blue&quot;
+plot(np@network, vertex.size=6, vertex.label=&quot;&quot;)
+</code></pre>
+
+<p><img src="figure/plot.png" alt="plot of chunk plot"> </p>
+
+<h2>Sequence</h2>
+
+<p>Sequence the networkplan via our model (<code>mv_v_dmd_sequence_model</code>).<br>
+This model orders the vertices and edges via a combination of &quot;network&quot; order
+and Downstream network length / Downstream demand (ascending, to connect
+communities with most demand at least cost first)</p>
+
+<pre><code class="r">np &lt;- sequence_plan_far(np, sequence_model=mv_v_dmd_sequence_model)
+
+settlements &lt;- get.data.frame(np@network, what=&quot;vertices&quot;)
+
+ggplot(settlements, aes(Sequence..Far.sighted.sequence, 
+  Sequence..Downstream.distance.sum.m.per.downstream.demand.sum.kwh)) +
+  geom_line() + 
+  ylim(0, 0.2)
+</code></pre>
+
+<pre><code>## Error: could not find function &quot;ggplot&quot;
+</code></pre>
+
+<h2>Plot Curve (Optional)</h2>
+
+<pre><code class="r">require(ggplot2)
+
+settlements &lt;- get.data.frame(np@network, what=&quot;vertices&quot;)
+
+ggplot(settlements, aes(Sequence..Far.sighted.sequence, 
+  Sequence..Downstream.distance.sum.m.per.downstream.demand.sum.kwh)) +
+  geom_line() + 
+  ylim(0, 0.2)
+</code></pre>
+
+<p><img src="figure/curve_plot.png" alt="plot of chunk curve_plot"> </p>
+
+<h2>Write</h2>
+
+<p>Now we can write the sequenced output for import into other tools like QGIS or Excel.<br>
+We&#39;ll write it to the same directory that we loaded the scenario from (<code>base_dir</code>).</p>
+
+<pre><code class="r">write.NetworkPlan(np, base_dir)
+</code></pre>
+
+</body>
+
+</html>
