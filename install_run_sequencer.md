@@ -1,4 +1,7 @@
-<link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link>
+<link href="markdown.css" rel="stylesheet"></link>
+<script type="text/javascript"
+   src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
 Sequencing a Scenario via NetworkPlanner R library
 ==================================================
 
@@ -51,7 +54,6 @@ base_dir <- "~/src/ecreee_training/leona_500kwh_dmd"
 Load
 ----
 Load the NetworkPlanner scenario
-"Fake" nodes, which represent connections to an existing network are blue.
 
 
 ```r
@@ -71,7 +73,7 @@ Plot (Optional)
 This step is optional, but serves as a validation that you have loaded the network properly.  
 
 The plot displays all nodes of the scenario, including those that are not actually
-connected to the network.  
+connected to the network.  Nodes representing connections to the existing grid are colored in blue.
 
 
 ```r
@@ -85,28 +87,23 @@ Sequence
 --------
 
 Sequence the networkplan via our model (`mv_v_dmd_sequence_model`).  
-This model orders the vertices and edges via a combination of "network" order
-and Downstream network length / Downstream demand (ascending, to connect
-communities with most demand at least cost first)
+This model orders the nodes and segments via a combination of network *topology* and financial viability.  
+
+Financial viability is determined by minimizing the following on a nodal basis:
+
+$$\frac{\sum_{i=1}^{n} distance_{i}}{\sum_{i=1}^{n} demand_{i}}$$
+
+Where the sum of distances and demands are calculated over all *downstream* nodes. 
 
 
 ```r
 np <- sequence_plan_far(np, sequence_model=mv_v_dmd_sequence_model)
-
-settlements <- get.data.frame(np@network, what="vertices")
-
-ggplot(settlements, aes(Sequence..Far.sighted.sequence, 
-  Sequence..Downstream.distance.sum.m.per.downstream.demand.sum.kwh)) +
-  geom_line() + 
-  ylim(0, 0.2)
-```
-
-```
-## Error: could not find function "ggplot"
 ```
 
 Plot Curve (Optional)
 --------------------
+
+This curve shows the Financial viability curve over the sequence
 
 
 ```r

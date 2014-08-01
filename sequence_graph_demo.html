@@ -9,8 +9,8 @@
 @import url(//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.2/leaflet.css);
 
 #map {
-  width: 500px;
-  height: 300px;
+  width: 800px;
+  height: 400px;
 }
 
 svg {
@@ -68,11 +68,12 @@ svg {
 
 // vars for graph
 var margin = {top: 20, right: 20, bottom: 60, left: 80},
-    width = 500 - margin.left - margin.right,
-    height = 300 - margin.top - margin.bottom;
+    width = 800 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
 
 var margin2 = {top: 230, right: 20, bottom: 10, left: 80},
-    height2 = 300 - margin2.top - margin2.bottom;
+    height2 = 300 - margin2.top - margin2.bottom,
+    curve_height = 300 - margin.top - margin.bottom;
 
 /*
 var margin = {top: 20, right: 20, bottom: 60, left: 80},
@@ -169,7 +170,7 @@ d3.json("leona_500kwh_dmd/igraph.json", function(collection) {
     //And render the parts that do NOT change when sequence_num changes
     var curve_svg = d3.select("p#curve").append("svg")
             .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
+            .attr("height", curve_height + margin.top + margin.bottom)
             .append("g")
             .attr("class", "curve")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -179,7 +180,7 @@ d3.json("leona_500kwh_dmd/igraph.json", function(collection) {
         .clamp(true);
 
     var y = d3.scale.linear()
-        .range([height, 0]);
+        .range([curve_height, 0]);
 
     var xAxis = d3.svg.axis()
         .scale(x)
@@ -191,7 +192,7 @@ d3.json("leona_500kwh_dmd/igraph.json", function(collection) {
 
     var area = d3.svg.area()
         .x(function(d) { return x(d["Sequence..Far.sighted.sequence"]); })
-        .y0(height)
+        .y0(curve_height)
         .y1(function(d) { return y(d["Cumulative_Population"]); });
 
     x.domain(d3.extent(grid_verts, function(d) { return d["Sequence..Far.sighted.sequence"]; }));
@@ -199,7 +200,7 @@ d3.json("leona_500kwh_dmd/igraph.json", function(collection) {
 
     curve_svg.append("g")
         .attr("class", "x axis")
-        .attr("transform", "translate(0," + height + ")")
+        .attr("transform", "translate(0," + curve_height + ")")
         .call(xAxis);
 
     curve_svg.append("g")
@@ -232,7 +233,7 @@ d3.json("leona_500kwh_dmd/igraph.json", function(collection) {
         .remove();
 
     slider.select(".background")
-        .attr("height", height);
+        .attr("height", curve_height);
 
     var handle = slider.append("circle")
         .attr("class", "handle")

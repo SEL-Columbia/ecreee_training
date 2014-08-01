@@ -149,7 +149,10 @@ hr {
 </head>
 
 <body>
-<p><link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link></p>
+<p><link href="markdown.css" rel="stylesheet"></link></p>
+
+<script type="text/javascript"
+   src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
 <h1>Sequencing a Scenario via NetworkPlanner R library</h1>
 
@@ -169,10 +172,6 @@ Once that&#39;s done, you can install our library.</p>
 
 <pre><code class="r">install.packages(&#39;devtools&#39;)
 </code></pre>
-
-<pre><code>## Error: trying to use CRAN without setting a mirror
-</code></pre>
-
 <pre><code class="r">library(devtools)
 install_github(&quot;SEL-Columbia/networkplanner.R&quot;)
 </code></pre>
@@ -192,8 +191,7 @@ base_dir &lt;- &quot;~/src/ecreee_training/leona_500kwh_dmd&quot;
 
 <h2>Load</h2>
 
-<p>Load the NetworkPlanner scenario
-&quot;Fake&quot; nodes, which represent connections to an existing network are blue.</p>
+<p>Load the NetworkPlanner scenario</p>
 
 <pre><code class="r">np &lt;- read_networkplan(base_dir)
 </code></pre>
@@ -209,7 +207,7 @@ base_dir &lt;- &quot;~/src/ecreee_training/leona_500kwh_dmd&quot;
 <p>This step is optional, but serves as a validation that you have loaded the network properly.  </p>
 
 <p>The plot displays all nodes of the scenario, including those that are not actually
-connected to the network.  </p>
+connected to the network.  Nodes representing connections to the existing grid are colored in blue.</p>
 
 <pre><code class="r">V(np@network)[V(np@network)$Network..Is.fake]$color &lt;- &quot;blue&quot;
 plot(np@network, vertex.size=6, vertex.label=&quot;&quot;)
@@ -220,24 +218,20 @@ plot(np@network, vertex.size=6, vertex.label=&quot;&quot;)
 <h2>Sequence</h2>
 
 <p>Sequence the networkplan via our model (<code>mv_v_dmd_sequence_model</code>).<br>
-This model orders the vertices and edges via a combination of &quot;network&quot; order
-and Downstream network length / Downstream demand (ascending, to connect
-communities with most demand at least cost first)</p>
+This model orders the nodes and segments via a combination of network <em>topology</em> and financial viability.  </p>
+
+<p>Financial viability is determined by minimizing the following on a nodal basis:</p>
+
+<p>\[\frac{\sum_{i=1}^{n} distance_{i}}{\sum_{i=1}^{n} demand_{i}}\]</p>
+
+<p>Where the sum of distances and demands are calculated over all <em>downstream</em> nodes. </p>
 
 <pre><code class="r">np &lt;- sequence_plan_far(np, sequence_model=mv_v_dmd_sequence_model)
-
-settlements &lt;- get.data.frame(np@network, what=&quot;vertices&quot;)
-
-ggplot(settlements, aes(Sequence..Far.sighted.sequence, 
-  Sequence..Downstream.distance.sum.m.per.downstream.demand.sum.kwh)) +
-  geom_line() + 
-  ylim(0, 0.2)
-</code></pre>
-
-<pre><code>## Error: could not find function &quot;ggplot&quot;
 </code></pre>
 
 <h2>Plot Curve (Optional)</h2>
+
+<p>This curve shows the Financial viability curve over the sequence</p>
 
 <pre><code class="r">require(ggplot2)
 

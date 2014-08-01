@@ -1,11 +1,18 @@
-<p><link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link></p>
+<p><link href="markdown.css" rel="stylesheet"></link>
+<script type="text/javascript"
+   src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script></p>
 <h1>Sequencing</h1>
 <h2>Introduction and Motivation</h2>
 <ul>
 <li>Recap:  NetworkPlanner produces a least cost electrification plan for a region</li>
-<li>How do you <em>implement</em> that plan?  What is a recommended grid roll out sequence?  </li>
+<li>How do we decompose and <em>sequence</em> that plan?</li>
 </ul>
 <p><img alt="Plan Roll Out" src="images/to_sequenced.png" /></p>
+<ul>
+<li>Order is determined by combination of Network <em>topology</em> and financial viability</li>
+<li>Financial viability is determined by minimizing the following on a nodal basis:</li>
+</ul>
+<p>$$\frac{\sum_{i=1}^{n} distance_{i}}{\sum_{i=1}^{n} demand_{i}}$$</p>
 <h2>Demo</h2>
 <p><a href="sequence_graph_demo.html">Demo of Sequencer</a></p>
 <h2>Sequencing NetworkPlanner output with R</h2>
