@@ -50,7 +50,7 @@ svg {
 <body>
 
 <h1>Sequencing Demo</h1>
-<i>Note:  This will take a long time to load initially.  Please be patient!</i>
+<i>Note:  This may take a long time to load initially.  Please be patient!</i>
 <p id="map"></p>
 
 <p>This is a demonstration of how a networkplanner output might be sequenced</p>
@@ -131,7 +131,9 @@ function get_class_for_sequence(d, i) {
 }
 
 function get_tooltip_text(d) { 
-    str = "Downstream Demand (kwh): " + d["Sequence..Downstream.demand.sum.kwh"] + "\n";
+    str = "Name: " + d["Name"] + "\n";
+    str += "Population: " + d["Population"] + "\n";
+    str += "Downstream Demand (kwh): " + d["Sequence..Downstream.demand.sum.kwh"] + "\n";
     str += "Downstream Distance (m): " + d["Sequence..Downstream.distance.sum.m"] + "\n";
     str += "Downstream Distance / Demand: " + d["Sequence..Downstream.distance.sum.m.per.downstream.demand.sum.kwh"] + "\n";
     str += "Sequence: " + d["Sequence..Far.sighted.sequence"];
