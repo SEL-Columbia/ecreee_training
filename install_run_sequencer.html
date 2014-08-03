@@ -172,7 +172,7 @@ Once that&#39;s done, you can install our library.</p>
 
 <pre><code class="r">install.packages(&#39;devtools&#39;)
 </code></pre>
-<pre><code class="r">library(devtools)
+<pre><code class="r">require(devtools)
 install_github(&quot;SEL-Columbia/networkplanner.R&quot;)
 </code></pre>
 
@@ -182,11 +182,11 @@ install_github(&quot;SEL-Columbia/networkplanner.R&quot;)
 I&#39;m using my scenario directory below, but yours may vary.  </p>
 
 <pre><code class="r">#Load the library first
-library(networkplanner)
+require(networkplanner)
 
 # Set the directory containing the output of a Network Planner
 # scenario.  This will need to change depending on your files location
-base_dir &lt;- &quot;~/src/ecreee_training/leona_500kwh_dmd&quot;
+base_dir &lt;- &quot;C:/Users/cjn/leona_500kwh_dmd&quot;
 </code></pre>
 
 <h2>Load</h2>
@@ -231,7 +231,8 @@ This model orders the nodes and segments via a combination of network <em>topolo
 
 <h2>Plot Curve (Optional)</h2>
 
-<p>This curve shows the Financial viability curve over the sequence</p>
+<p>This curve shows the Financial viability curve over the sequence.<br>
+Note:  This requires the ggplot2 library which can be installed via <code>install.packages("ggplot2")</code></p>
 
 <pre><code class="r">require(ggplot2)
 

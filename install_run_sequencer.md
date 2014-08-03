@@ -24,14 +24,7 @@ Once that's done, you can install our library.
 
 ```r
 install.packages('devtools')
-```
-
-```
-## Error: trying to use CRAN without setting a mirror
-```
-
-```r
-library(devtools)
+require(devtools)
 install_github("SEL-Columbia/networkplanner.R")
 ```
 
@@ -44,11 +37,11 @@ I'm using my scenario directory below, but yours may vary.
 
 ```r
 #Load the library first
-library(networkplanner)
+require(networkplanner)
 
 # Set the directory containing the output of a Network Planner
 # scenario.  This will need to change depending on your files location
-base_dir <- "~/src/ecreee_training/leona_500kwh_dmd"
+base_dir <- "C:/Users/cjn/leona_500kwh_dmd"
 ```
 
 Load
@@ -103,7 +96,10 @@ np <- sequence_plan_far(np, sequence_model=mv_v_dmd_sequence_model)
 Plot Curve (Optional)
 --------------------
 
-This curve shows the Financial viability curve over the sequence
+This curve shows the Financial viability curve over the sequence.
+Note:  This step requires ggplot2 to be installed if not already. 
+You can install ggplot2 via:  `install.packages('ggplot2')`
+
 
 
 ```r
