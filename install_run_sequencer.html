@@ -179,14 +179,15 @@ install_github(&quot;SEL-Columbia/networkplanner.R&quot;)
 <h2>Setup</h2>
 
 <p>Now that you have the library installed, you need to locate the directory containing the NetworkPlanner output that you want to work with.<br>
-I&#39;m using my scenario directory below, but yours may vary.  </p>
+I&#39;m using my scenario directory below, but yours may vary.  
+Remember to set your working directory appropriately.</p>
 
 <pre><code class="r">#Load the library first
 require(networkplanner)
 
 # Set the directory containing the output of a Network Planner
 # scenario.  This will need to change depending on your files location
-base_dir &lt;- &quot;C:/Users/cjn/leona_500kwh_dmd&quot;
+base_dir &lt;- &quot;3206&quot;
 </code></pre>
 
 <h2>Load</h2>
@@ -197,7 +198,7 @@ base_dir &lt;- &quot;C:/Users/cjn/leona_500kwh_dmd&quot;
 </code></pre>
 
 <pre><code>## OGR data source with driver: ESRI Shapefile 
-## Source: &quot;/home/cjn/src/ecreee_training/leona_500kwh_dmd&quot;, layer: &quot;networks-proposed&quot;
+## Source: &quot;3206&quot;, layer: &quot;networks-proposed&quot;
 ## with 70 features and 1 fields
 ## Feature type: wkbLineString with 2 dimensions
 </code></pre>

@@ -33,6 +33,7 @@ Setup
 
 Now that you have the library installed, you need to locate the directory containing the NetworkPlanner output that you want to work with.  
 I'm using my scenario directory below, but yours may vary.  
+Remember to set your working directory appropriately.
 
 
 ```r
@@ -41,7 +42,7 @@ require(networkplanner)
 
 # Set the directory containing the output of a Network Planner
 # scenario.  This will need to change depending on your files location
-base_dir <- "C:/Users/cjn/leona_500kwh_dmd"
+base_dir <- "3206"
 ```
 
 Load
@@ -55,7 +56,7 @@ np <- read_networkplan(base_dir)
 
 ```
 ## OGR data source with driver: ESRI Shapefile 
-## Source: "/home/cjn/src/ecreee_training/leona_500kwh_dmd", layer: "networks-proposed"
+## Source: "3206", layer: "networks-proposed"
 ## with 70 features and 1 fields
 ## Feature type: wkbLineString with 2 dimensions
 ```

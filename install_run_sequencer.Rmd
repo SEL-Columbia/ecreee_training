@@ -31,7 +31,8 @@ Setup
 -----
 
 Now that you have the library installed, you need to locate the directory containing the NetworkPlanner output that you want to work with.  
-I'm using my scenario directory below, but yours may vary.  
+I'm using my scenario directory below, but yours may vary depending on your working directory and where your files are located.  
+Remember to set your working directory appropriately.  
 
 ```{r setup, message=F, warning=F}
 #Load the library first
@@ -39,7 +40,7 @@ require(networkplanner)
 
 # Set the directory containing the output of a Network Planner
 # scenario.  This will need to change depending on your files location
-base_dir <- "~/src/ecreee_training/leona_500kwh_dmd"
+base_dir <- "3206"
 ```
 
 Load
