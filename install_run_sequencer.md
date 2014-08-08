@@ -24,6 +24,13 @@ Once that's done, you can install our library.
 
 ```r
 install.packages('devtools')
+```
+
+```
+## Error: trying to use CRAN without setting a mirror
+```
+
+```r
 require(devtools)
 install_github("SEL-Columbia/networkplanner.R")
 ```
@@ -32,17 +39,20 @@ Setup
 -----
 
 Now that you have the library installed, you need to locate the directory containing the NetworkPlanner output that you want to work with.  
-I'm using my scenario directory below, but yours may vary.  
-Remember to set your working directory appropriately.
+I'm using my scenario directory below, but yours may vary depending on your working directory and where your files are located.  
+Remember to set your working directory appropriately.  
 
 
 ```r
+# set working directory (change as necessary)
+setwd("/home/cjn/src/ecreee_training")
+
 #Load the library first
 require(networkplanner)
 
 # Set the directory containing the output of a Network Planner
 # scenario.  This will need to change depending on your files location
-base_dir <- "3206"
+base_dir <- "leona_500kwh_dmd"
 ```
 
 Load
@@ -56,7 +66,7 @@ np <- read_networkplan(base_dir)
 
 ```
 ## OGR data source with driver: ESRI Shapefile 
-## Source: "3206", layer: "networks-proposed"
+## Source: "/home/cjn/src/ecreee_training/leona_500kwh_dmd", layer: "networks-proposed"
 ## with 70 features and 1 fields
 ## Feature type: wkbLineString with 2 dimensions
 ```
@@ -102,7 +112,6 @@ Note:  This step requires ggplot2 to be installed if not already.
 You can install ggplot2 via:  `install.packages('ggplot2')`
 
 
-
 ```r
 require(ggplot2)
 
@@ -126,3 +135,7 @@ We'll write it to the same directory that we loaded the scenario from (`base_dir
 ```r
 write.NetworkPlan(np, base_dir)
 ```
+
+If you look in the `base_dir` directory, you should see 4 new files:
+- networkplan-edges.{shp,dbf,shx}  (the sequenced proposed network)
+- networkplan-vertices.csv (the sequenced nodes or settlements)

@@ -172,6 +172,10 @@ Once that&#39;s done, you can install our library.</p>
 
 <pre><code class="r">install.packages(&#39;devtools&#39;)
 </code></pre>
+
+<pre><code>## Error: trying to use CRAN without setting a mirror
+</code></pre>
+
 <pre><code class="r">require(devtools)
 install_github(&quot;SEL-Columbia/networkplanner.R&quot;)
 </code></pre>
@@ -179,15 +183,18 @@ install_github(&quot;SEL-Columbia/networkplanner.R&quot;)
 <h2>Setup</h2>
 
 <p>Now that you have the library installed, you need to locate the directory containing the NetworkPlanner output that you want to work with.<br>
-I&#39;m using my scenario directory below, but yours may vary.  
-Remember to set your working directory appropriately.</p>
+I&#39;m using my scenario directory below, but yours may vary depending on your working directory and where your files are located.<br>
+Remember to set your working directory appropriately.  </p>
 
-<pre><code class="r">#Load the library first
+<pre><code class="r"># set working directory (change as necessary)
+setwd(&quot;/home/cjn/src/ecreee_training&quot;)
+
+#Load the library first
 require(networkplanner)
 
 # Set the directory containing the output of a Network Planner
 # scenario.  This will need to change depending on your files location
-base_dir &lt;- &quot;3206&quot;
+base_dir &lt;- &quot;leona_500kwh_dmd&quot;
 </code></pre>
 
 <h2>Load</h2>
@@ -198,7 +205,7 @@ base_dir &lt;- &quot;3206&quot;
 </code></pre>
 
 <pre><code>## OGR data source with driver: ESRI Shapefile 
-## Source: &quot;3206&quot;, layer: &quot;networks-proposed&quot;
+## Source: &quot;/home/cjn/src/ecreee_training/leona_500kwh_dmd&quot;, layer: &quot;networks-proposed&quot;
 ## with 70 features and 1 fields
 ## Feature type: wkbLineString with 2 dimensions
 </code></pre>
@@ -232,8 +239,9 @@ This model orders the nodes and segments via a combination of network <em>topolo
 
 <h2>Plot Curve (Optional)</h2>
 
-<p>This curve shows the Financial viability curve over the sequence.<br>
-Note:  This requires the ggplot2 library which can be installed via <code>install.packages("ggplot2")</code></p>
+<p>This curve shows the Financial viability curve over the sequence.
+Note:  This step requires ggplot2 to be installed if not already. 
+You can install ggplot2 via:  <code>install.packages(&#39;ggplot2&#39;)</code></p>
 
 <pre><code class="r">require(ggplot2)
 
@@ -254,6 +262,13 @@ We&#39;ll write it to the same directory that we loaded the scenario from (<code
 
 <pre><code class="r">write.NetworkPlan(np, base_dir)
 </code></pre>
+
+<p>If you look in the <code>base_dir</code> directory, you should see 4 new files:</p>
+
+<ul>
+<li>networkplan-edges.{shp,dbf,shx}  (the sequenced proposed network)</li>
+<li>networkplan-vertices.csv (the sequenced nodes or settlements)</li>
+</ul>
 
 </body>
 

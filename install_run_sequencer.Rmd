@@ -35,12 +35,15 @@ I'm using my scenario directory below, but yours may vary depending on your work
 Remember to set your working directory appropriately.  
 
 ```{r setup, message=F, warning=F}
+# set working directory (change as necessary)
+setwd("/home/cjn/src/ecreee_training")
+
 #Load the library first
 require(networkplanner)
 
 # Set the directory containing the output of a Network Planner
 # scenario.  This will need to change depending on your files location
-base_dir <- "3206"
+base_dir <- "leona_500kwh_dmd"
 ```
 
 Load
@@ -109,3 +112,7 @@ We'll write it to the same directory that we loaded the scenario from (`base_dir
 write.NetworkPlan(np, base_dir)
 
 ```
+
+If you look in the `base_dir` directory, you should see 4 new files:
+- networkplan-edges.{shp,dbf,shx}  (the sequenced proposed network)
+- networkplan-vertices.csv (the sequenced nodes or settlements)
